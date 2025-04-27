@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyTube - YouTube Video Summarizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #e5e5e5;
+        }
+        
+        .terminal {
+            font-family: 'Fira Code', monospace;
+            background-color: #111827;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .terminal-header {
+            background-color: #1f2937;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        
+        .terminal-body {
+            height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #4b5563 #1f2937;
+        }
+        
+        .terminal-body::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal-body::-webkit-scrollbar-track {
+            background: #1f2937;
+        }
+        
+        .terminal-body::-webkit-scrollbar-thumb {
+            background-color: #4b5563;
+            border-radius: 4px;
+        }
+        
+        .prompt {
+            color: #10b981;
+        }
+        
+        .command {
+            color: #3b82f6;
+        }
+        
+        .response {
+            color: #e5e5e5;
+        }
+        
+        .video-container {
+            aspect-ratio: 16 / 9;
+        }
+        
+        .chat-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-active {
+            border-bottom: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+        
+        .highlight {
+            background-color: rgba(59, 130, 246, 0.2);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center space-x-2">
+                <i class="fas fa-terminal text-emerald-400 text-2xl"></i>
+                <h1 class="text-2xl font-bold text-gray-100">Study<span class="text-blue-400">Tube</span></h1>
+            </div>
+            <div class="flex space-x-4">
+                <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm font-medium transition">
+                    <i class="fas fa-user mr-2"></i>Login
+                </button>
+                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium transition">
+                    <i class="fas fa-rocket mr-2"></i>Upgrade
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - Video and Controls -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Video Player -->
+                <div class="terminal">
+                    <div class="terminal-header px-4 py-3 flex items-center">
+                        <div class="flex space-x-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        </div>
+                        <div class="text-sm text-gray-300">YouTube Video Summarizer</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="video-container bg-black rounded-md overflow-hidden">
+                            <div class="h-full flex items-center justify-center bg-gray-900">
+                                <div class="text-center">
+                                    <i class="fas fa-play-circle text-5xl text-gray-600 mb-2"></i>
+                                    <p class="text-gray-400">Enter YouTube URL to load video</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- URL Input -->
+                <div class="terminal">
+                    <div class="terminal-header px-4 py-3 flex items-center">
+                        <div class="flex space-x-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-gray-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-gray-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-gray-500"></div>
+                        </div>
+                        <div class="text-sm text-gray-300">Video Processor</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex space-x-2">
+                            <input 
+                                type="text" 
+                                placeholder="Paste YouTube video URL here..." 
+                                class="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                            <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition">
+                                <i class="fas fa-bolt mr-2"></i>Process
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Video Info -->
+                <div class="terminal">
+                    <div class="terminal-header px-4 py-3 flex items-center">
+                        <div class="flex space-x-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-purple-500"></div>
+                        </div>
+                        <div class="text-sm text-gray-300">Video Information</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="bg-gray-800 p-4 rounded-md">
+                                <div class="text-gray-400 text-sm mb-1">Duration</div>
+                                <div class="text-lg font-medium">12:34</div>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-md">
+                                <div class="text-gray-400 text-sm mb-1">Views</div>
+                                <div class="text-lg font-medium">1.2M</div>
+                            </div>
+                            <div class="bg-gray-800 p-4 rounded-md">
+                                <div class="text-gray-400 text-sm mb-1">Upload Date</div>
+                                <div class="text-lg font-medium">2023-05-15</div>
+                            </div>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">Introduction to Quantum Mechanics</h3>
+                        <p class="text-gray-300 mb-4">This video covers the fundamental concepts of quantum mechanics, including wave-particle duality, the uncertainty principle, and Schrödinger's equation.</p>
+                        <div class="flex space-x-2">
+                            <span class="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm">Physics</span>
+                            <span class="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm">Science</span>
+                            <span class="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm">Education</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Terminal and Study Tools -->
+            <div class="space-y-6">
+                <!-- Terminal -->
+                <div class="terminal h-full">
+                    <div class="terminal-header px-4 py-3 flex items-center">
+                        <div class="flex space-x-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                        </div>
+                        <div class="text-sm text-gray-300">Study Assistant Terminal</div>
+                    </div>
+                    <div class="terminal-body p-4">
+                        <div class="mb-4">
+                            <div class="flex items-baseline mb-1">
+                                <span class="prompt mr-2">$</span>
+                                <span class="command">summarize --key-points</span>
+                            </div>
+                            <div class="response text-sm ml-6 mb-4">
+                                <p>1. <span class="highlight">Wave-particle duality</span>: Particles can exhibit both wave and particle characteristics.</p>
+                                <p>2. <span class="highlight">Uncertainty principle</span>: Impossible to simultaneously know position and momentum with perfect accuracy.</p>
+                                <p>3. <span class="highlight">Schrödinger's equation</span>: Fundamental equation describing quantum systems.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex items-baseline mb-1">
+                                <span class="prompt mr-2">$</span>
+                                <span class="command">explain --uncertainty-principle</span>
+                            </div>
+                            <div class="response text-sm ml-6 mb-4">
+                                <p>The <span class="highlight">Heisenberg Uncertainty Principle</span> states that the more precisely the position of a particle is determined, the less precisely its momentum can be known, and vice versa. This is not due to measurement limitations but is a fundamental property of quantum systems.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <div class="flex items-baseline mb-1">
+                                <span class="prompt mr-2">$</span>
+                                <span class="command">quiz --generate</span>
+                            </div>
+                            <div class="response text-sm ml-6 mb-4">
+                                <p class="font-medium mb-2">Quiz:</p>
+                                <p>1. What phenomenon demonstrates wave-particle duality?<br>
+                                &nbsp;&nbsp;a) Photoelectric effect<br>
+                                &nbsp;&nbsp;b) Double-slit experiment<br>
+                                &nbsp;&nbsp;c) Blackbody radiation</p>
+                                <p>2. Who formulated the uncertainty principle?<br>
+                                &nbsp;&nbsp;a) Schrödinger<br>
+                                &nbsp;&nbsp;b) Heisenberg<br>
+                                &nbsp;&nbsp;c) Bohr</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-baseline">
+                            <span class="prompt mr-2">$</span>
+                            <input type="text" class="bg-transparent border-none focus:outline-none flex-1 text-gray-300" placeholder="Type a command...">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="terminal">
+                    <div class="terminal-header px-4 py-3 flex items-center">
+                        <div class="flex space-x-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                        </div>
+                        <div class="text-sm text-gray-300">Quick Actions</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm flex items-center justify-center transition">
+                                <i class="fas fa-file-alt mr-2"></i>Transcript
+                            </button>
+                            <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm flex items-center justify-center transition">
+                                <i class="fas fa-list-ol mr-2"></i>Timestamps
+                            </button>
+                            <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm flex items-center justify-center transition">
+                                <i class="fas fa-question-circle mr-2"></i>Quiz Me
+                            </button>
+                            <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm flex items-center justify-center transition">
+                                <i class="fas fa-book mr-2"></i>Flashcards
+                            </button>
+                            <button class="px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm flex items-center justify-center transition col-span-2">
+                                <i class="fas fa-comments mr-2"></i>Discussion Questions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat Interface -->
+                <div class="terminal">
+                    <div class="terminal-header px-4 py-3 flex items-center">
+                        <div class="flex space-x-2 mr-4">
+                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        </div>
+                        <div class="text-sm text-gray-300">Video Chat</div>
+                    </div>
+                    <div class="p-4">
+                        <div class="space-y-4 mb-4 max-h-48 overflow-y-auto">
+                            <div class="chat-message">
+                                <div class="text-xs text-gray-400 mb-1">You</div>
+                                <div class="bg-gray-800 px-3 py-2 rounded-md">What's the main equation discussed?</div>
+                            </div>
+                            <div class="chat-message">
+                                <div class="text-xs text-gray-400 mb-1">StudyBot</div>
+                                <div class="bg-blue-900 px-3 py-2 rounded-md">The main equation is <span class="font-medium">Schrödinger's equation</span>, which describes how the quantum state of a physical system changes over time.</div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <input 
+                                type="text" 
+                                placeholder="Ask about the video..." 
+                                class="flex-1 px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                            >
+                            <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm transition">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Section -->
+        <div class="mt-8 terminal">
+            <div class="terminal-header px-4 py-3 flex items-center">
+                <div class="flex space-x-2 mr-4">
+                    <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-indigo-500"></div>
+                </div>
+                <div class="text-sm text-gray-300">Detailed Summary</div>
+            </div>
+            <div class="p-6">
+                <div class="flex border-b border-gray-700 mb-4">
+                    <button class="pb-2 px-4 text-sm font-medium tab-active">Summary</button>
+                    <button class="pb-2 px-4 text-sm font-medium text-gray-400 hover:text-gray-300">Transcript</button>
+                    <button class="pb-2 px-4 text-sm font-medium text-gray-400 hover:text-gray-300">Notes</button>
+                    <button class="pb-2 px-4 text-sm font-medium text-gray-400 hover:text-gray-300">References</button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">1. Introduction to Quantum Concepts</h3>
+                        <p class="text-gray-300">The video begins by explaining how classical physics fails to describe phenomena at atomic scales, leading to the development of quantum mechanics. Key experiments like the double-slit experiment demonstrate wave-particle duality.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">2. Wave-Particle Duality</h3>
+                        <p class="text-gray-300">Particles such as electrons can exhibit both particle-like and wave-like properties. This is demonstrated through interference patterns that emerge when particles pass through double slits, similar to waves.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">3. Heisenberg's Uncertainty Principle</h3>
+                        <p class="text-gray-300">A fundamental limit to precision when measuring pairs of physical properties. The principle is mathematically expressed as ΔxΔp ≥ ħ/2, where Δx is position uncertainty and Δp is momentum uncertainty.</p>
+                    </div>
+                    
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">4. Schrödinger's Equation</h3>
+                        <p class="text-gray-300">The cornerstone of quantum mechanics, this partial differential equation describes how the quantum state of a physical system changes over time. The equation is iħ∂ψ/∂t = Ĥψ, where ψ is the wave function.</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-between items-center">
+                    <div class="text-sm text-gray-400">Summary generated at 3:42 PM, June 10, 2023</div>
+                    <button class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-md text-sm font-medium transition">
+                        <i class="fas fa-download mr-2"></i>Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Simple terminal interaction
+        document.addEventListener('DOMContentLoaded', function() {
+            const terminalInput = document.querySelector('.terminal-body input');
+            
+            terminalInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const command = this.value;
+                    this.value = '';
+                    
+                    // Create command element
+                    const commandElement = document.createElement('div');
+                    commandElement.className = 'flex items-baseline mb-1';
+                    commandElement.innerHTML = `
+                        <span class="prompt mr-2">$</span>
+                        <span class="command">${command}</span>
+                    `;
+                    
+                    // Create response element
+                    const responseElement = document.createElement('div');
+                    responseElement.className = 'response text-sm ml-6 mb-4 chat-message';
+                    
+                    // Simple command responses
+                    if (command.includes('help')) {
+                        responseElement.innerHTML = `
+                            <p>Available commands:</p>
+                            <p><span class="text-emerald-400">summarize</span> - Generate video summary</p>
+                            <p><span class="text-emerald-400">explain</span> - Get detailed explanation of concept</p>
+                            <p><span class="text-emerald-400">quiz</span> - Generate study questions</p>
+                            <p><span class="text-emerald-400">timeline</span> - Show important timestamps</p>
+                        `;
+                    } else if (command.includes('hello') || command.includes('hi')) {
+                        responseElement.innerHTML = `<p>Hello! How can I help you study this video?</p>`;
+                    } else {
+                        responseElement.innerHTML = `<p>Command not recognized. Type "help" for available commands.</p>`;
+                    }
+                    
+                    // Insert before the input
+                    const terminalBody = document.querySelector('.terminal-body');
+                    terminalBody.insertBefore(commandElement, terminalInput.parentNode);
+                    terminalBody.insertBefore(responseElement, terminalInput.parentNode);
+                    
+                    // Scroll to bottom
+                    terminalBody.scrollTop = terminalBody.scrollHeight;
+                }
+            });
+            
+            // Simulate chat interaction
+            const chatInput = document.querySelector('.video-chat input');
+            const chatButton = document.querySelector('.video-chat button');
+            
+            function sendChatMessage() {
+                const message = chatInput.value.trim();
+                if (message) {
+                    // Add user message
+                    const chatContainer = document.querySelector('.video-chat .chat-messages');
+                    const userMessage = document.createElement('div');
+                    userMessage.className = 'chat-message';
+                    userMessage.innerHTML = `
+                        <div class="text-xs text-gray-400 mb-1">You</div>
+                        <div class="bg-gray-800 px-3 py-2 rounded-md">${message}</div>
+                    `;
+                    chatContainer.appendChild(userMessage);
+                    
+                    // Clear input
+                    chatInput.value = '';
+                    
+                    // Add bot response after delay
+                    setTimeout(() => {
+                        const botMessage = document.createElement('div');
+                        botMessage.className = 'chat-message';
+                        botMessage.innerHTML = `
+                            <div class="text-xs text-gray-400 mb-1">StudyBot</div>
+                            <div class="bg-blue-900 px-3 py-2 rounded-md">I found relevant information at 4:32 in the video that might answer your question about "${message}".</div>
+                        `;
+                        chatContainer.appendChild(botMessage);
+                        
+                        // Scroll to bottom
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 1000);
+                }
+            }
+            
+            chatButton.addEventListener('click', sendChatMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendChatMessage();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

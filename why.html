@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VidSum - YouTube Video Summarizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .summary-section {
+            transition: max-height 0.3s ease-out;
+            overflow: hidden;
+        }
+        .summary-section.collapsed {
+            max-height: 100px;
+        }
+        .summary-section.expanded {
+            max-height: 1000px;
+        }
+        .chat-message {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .dark-mode {
+            background-color: #111827;
+            color: #f3f4f6;
+        }
+        .light-mode {
+            background-color: #f9fafb;
+            color: #111827;
+        }
+    </style>
+</head>
+<body class="dark-mode min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header with theme toggle -->
+        <header class="flex justify-between items-center mb-8">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-play-circle text-blue-500 text-3xl"></i>
+                <h1 class="text-2xl font-bold">Vid<span class="text-blue-500">Sum</span></h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+                <button class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition">
+                    <i class="fas fa-user-plus mr-2"></i>Sign Up
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left Column - Video Info and Summary -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Video Input -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+                    <h2 class="text-xl font-bold mb-4">Enter YouTube Video URL</h2>
+                    <div class="flex space-x-2">
+                        <input 
+                            type="text" 
+                            id="videoUrl" 
+                            placeholder="https://www.youtube.com/watch?v=..." 
+                            class="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                        <button id="processBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">
+                            <i class="fas fa-bolt mr-2"></i>Summarize
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Video Info -->
+                <div id="videoInfo" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hidden">
+                    <div class="flex flex-col md:flex-row gap-6">
+                        <div class="w-full md:w-1/3">
+                            <img id="videoThumbnail" src="" alt="Video thumbnail" class="w-full rounded-lg mb-2">
+                            <div class="flex justify-between text-sm text-gray-500 dark:text-gray-400">
+                                <span><i class="fas fa-eye mr-1"></i> <span id="videoViews"></span></span>
+                                <span><i class="fas fa-clock mr-1"></i> <span id="videoDuration"></span></span>
+                                <span><i class="fas fa-calendar mr-1"></i> <span id="videoDate"></span></span>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-2/3">
+                            <h2 id="videoTitle" class="text-2xl font-bold mb-2"></h2>
+                            <div id="videoChannel" class="flex items-center mb-4">
+                                <img id="channelThumbnail" src="" alt="Channel thumbnail" class="w-8 h-8 rounded-full mr-2">
+                                <span id="channelName" class="font-medium"></span>
+                            </div>
+                            <div id="videoDescription" class="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3"></div>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm">Education</span>
+                                <span class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm">Science</span>
+                                <span class="px-3 py-1 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm">Learning</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Video Summary -->
+                <div id="videoSummary" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">Video Summary</h2>
+                        <button id="expandAll" class="text-sm text-blue-600 dark:text-blue-400 hover:underline">Expand All</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <!-- Summary Section 1 -->
+                        <div class="summary-section collapsed border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <div class="summary-header bg-gray-100 dark:bg-gray-700 p-4 cursor-pointer flex justify-between items-center">
+                                <h3 class="font-bold">Introduction to Quantum Mechanics</h3>
+                                <i class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div class="summary-content p-4">
+                                <p class="mb-3">The video begins by explaining how classical physics fails to describe phenomena at atomic scales, leading to the development of quantum mechanics. Key experiments like the double-slit experiment demonstrate wave-particle duality.</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400"><i class="fas fa-clock mr-1"></i> 0:00 - 2:30</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary Section 2 -->
+                        <div class="summary-section collapsed border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <div class="summary-header bg-gray-100 dark:bg-gray-700 p-4 cursor-pointer flex justify-between items-center">
+                                <h3 class="font-bold">Wave-Particle Duality</h3>
+                                <i class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div class="summary-content p-4">
+                                <p class="mb-3">Particles such as electrons can exhibit both particle-like and wave-like properties. This is demonstrated through interference patterns that emerge when particles pass through double slits, similar to waves.</p>
+                                <p class="mb-3">The video shows animations of the famous double-slit experiment, first performed with light by Thomas Young in 1801, and later with electrons by Davisson and Germer in 1927.</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400"><i class="fas fa-clock mr-1"></i> 2:30 - 5:45</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Summary Section 3 -->
+                        <div class="summary-section collapsed border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                            <div class="summary-header bg-gray-100 dark:bg-gray-700 p-4 cursor-pointer flex justify-between items-center">
+                                <h3 class="font-bold">Heisenberg's Uncertainty Principle</h3>
+                                <i class="fas fa-chevron-down transition-transform duration-300"></i>
+                            </div>
+                            <div class="summary-content p-4">
+                                <p class="mb-3">A fundamental limit to precision when measuring pairs of physical properties. The principle is mathematically expressed as ΔxΔp ≥ ħ/2, where Δx is position uncertainty and Δp is momentum uncertainty.</p>
+                                <p class="mb-3">The video explains this through an analogy of trying to measure the position of an electron by bouncing photons off it - the very act of measurement disturbs the system.</p>
+                                <p class="text-sm text-gray-500 dark:text-gray-400"><i class="fas fa-clock mr-1"></i> 5:45 - 9:15</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 flex justify-between items-center">
+                        <div class="text-sm text-gray-500 dark:text-gray-400">
+                            <i class="fas fa-info-circle mr-1"></i> Summary generated on <span id="summaryDate">June 10, 2023</span>
+                        </div>
+                        <button class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded-md font-medium transition">
+                            <i class="fas fa-download mr-2"></i>Export
+                        </button>
+                        <button id="downloadTranscriptBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition">
+                            <i class="fas fa-download mr-2"></i>Download Transcript
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Chat Interface -->
+            <div class="space-y-6">
+                <!-- Suggested Questions -->
+                <div id="suggestedQuestions" class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hidden">
+                    <h2 class="text-xl font-bold mb-4">Suggested Questions</h2>
+                    <div class="grid grid-cols-1 gap-3">
+                        <button class="suggested-question px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-left transition">
+                            What is wave-particle duality?
+                        </button>
+                        <button class="suggested-question px-4 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-left transition">
+                            Can you explain Heisenberg's Uncertainty Principle?
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chatbox -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 space-y-4">
+                    <h2 class="text-xl font-bold mb-4">Chat with AI Assistant</h2>
+                    <div id="chatBox" class="space-y-3 h-64 overflow-y-auto">
+                        <!-- Chat messages will appear here -->
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <input 
+                            type="text" 
+                            id="chatInput" 
+                            placeholder="Ask a question..." 
+                            class="flex-1 px-4 py-3 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                        <button id="sendBtn" class="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
+        const processBtn = document.getElementById('processBtn');
+        const videoUrlInput = document.getElementById('videoUrl');
+        const videoInfo = document.getElementById('videoInfo');
+        const videoSummary = document.getElementById('videoSummary');
+        const expandAll = document.getElementById('expandAll');
+        const summarySections = document.querySelectorAll('.summary-section');
+        const chatBox = document.getElementById('chatBox');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const suggestedQuestions = document.getElementById('suggestedQuestions');
+        const downloadTranscriptBtn = document.getElementById('downloadTranscriptBtn');
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            body.classList.toggle('light-mode');
+        });
+
+        processBtn.addEventListener('click', () => {
+            const videoUrl = videoUrlInput.value;
+            if (videoUrl) {
+                // Simulate video processing
+                videoInfo.classList.remove('hidden');
+                videoSummary.classList.remove('hidden');
+                suggestedQuestions.classList.remove('hidden');
+            }
+        });
+
+        // Expand/Collapse Summary Sections
+        expandAll.addEventListener('click', () => {
+            summarySections.forEach(section => {
+                section.classList.toggle('collapsed');
+                section.classList.toggle('expanded');
+            });
+        });
+
+        summarySections.forEach(section => {
+            const header = section.querySelector('.summary-header');
+            header.addEventListener('click', () => {
+                section.classList.toggle('collapsed');
+                section.classList.toggle('expanded');
+            });
+        });
+
+        sendBtn.addEventListener('click', () => {
+            const userInput = chatInput.value.trim();
+            if (userInput) {
+                // Display user input
+                const userMessage = document.createElement('div');
+                userMessage.classList.add('chat-message');
+                userMessage.textContent = userInput;
+                chatBox.appendChild(userMessage);
+
+                // Simulate AI response
+                setTimeout(() => {
+                    const aiMessage = document.createElement('div');
+                    aiMessage.classList.add('chat-message');
+                    aiMessage.textContent = "I'm not sure, but here's some info!";
+                    chatBox.appendChild(aiMessage);
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                }, 1000);
+
+                chatInput.value = '';
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        });
+
+        // Suggested question click handler
+        const suggestedButtons = document.querySelectorAll('.suggested-question');
+        suggestedButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                chatInput.value = button.textContent;
+            });
+        });
+
+        // Transcript Downloader
+        downloadTranscriptBtn.addEventListener('click', () => {
+            const transcriptContent = `Transcript of the Video Summary\n\n
+            1. Introduction to Quantum Mechanics: The video discusses how classical physics cannot explain atomic scale phenomena and how quantum mechanics came into being...`;
+            
+            const blob = new Blob([transcriptContent], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'transcript.txt';
+            link.click();
+        });
+    </script>
+</body>
+</html>
